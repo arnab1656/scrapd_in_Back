@@ -28,11 +28,13 @@ export interface QueueDecodeStartData {
 }
 
 export interface ChunkData {
+  batchId: string;
   chunkIndex: number;
-  chunkData: any;
+  chunkData: ChunkInfo<ExtractedDataType>;
 }
 
 export interface ChunkDataComplete {
+  batchId: string;
   status: string;
   stats: {
     processedChunks: number;
@@ -41,10 +43,11 @@ export interface ChunkDataComplete {
 }
 
 export interface ChunkDataFatal {
-  status: string;
-  error: {
-    chunkIndex: number;
-    reason: string;
-    attempts: number;
-  };
+  batchId?: string;
+  // status: string;
+  // error: {
+  //   chunkIndex: number;
+  //   reason: string;
+  //   attempts: number;
+  // };
 }
