@@ -1,6 +1,7 @@
 import ChunkConsumer from "../kafka/consumer/ChunkConsumer";
 import { ChunkProducer } from "../kafka/producer/ChunkProducer";
 import { ExtractedDataType } from "../types/common.types";
+import { RedisBatchManager } from "../services/redis-batch.service";
 
 export class KafkaOrchestrator {
   private chunkConsumer: ChunkConsumer;
@@ -8,21 +9,30 @@ export class KafkaOrchestrator {
 
   private kafkaProducerData: ExtractedDataType[];
   private kafkaProducerDataLength: number;
+  private redisBatchManager: RedisBatchManager;
+  private batchId: string;
 
-  constructor(kafkaProducerData: ExtractedDataType[]) {
+  constructor(
+    kafkaProducerData: ExtractedDataType[],
+    redisBatchManager: RedisBatchManager,
+    batchId: string
+  ) {
     this.chunkConsumer = new ChunkConsumer();
     this.producer = new ChunkProducer();
     this.kafkaProducerData = kafkaProducerData;
     this.kafkaProducerDataLength = kafkaProducerData.length;
+    this.redisBatchManager = redisBatchManager;
+    this.batchId = batchId;
   }
 
-  private async startConsumer() {
+  private async handleConsumerStartUp() {
     try {
       const isConsumerStarted = await this.chunkConsumer.startConsumer(
         this.kafkaProducerDataLength
       );
 
       if (isConsumerStarted) {
+        await this.redisBatchManager.cleanupBatch(this.batchId);
         await this.chunkConsumer.shutdown();
       }
     } catch (error) {
@@ -42,14 +52,8 @@ export class KafkaOrchestrator {
 
   public async orchestrator() {
     try {
-      // Start consumer first and keep it running in background
-      const consumerPromise = this.startConsumer();
-
-      // Then start producer
+      await this.handleConsumerStartUp();
       await this.handleProducer(this.kafkaProducerData);
-
-      // Wait for consumer to complete
-      await consumerPromise;
     } catch (error) {
       if (this.chunkConsumer && this.producer) {
         await this.chunkConsumer.shutdown();

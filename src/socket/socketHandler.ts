@@ -83,7 +83,11 @@ export class SocketHandler {
 
         const kafkaProducerData = kafkaProducerDataOrganizer(chunks);
 
-        const kafkaOrchestrator = new KafkaOrchestrator(kafkaProducerData);
+        const kafkaOrchestrator = new KafkaOrchestrator(
+          kafkaProducerData,
+          this.redisBatchManager,
+          data.batchId
+        );
         await kafkaOrchestrator.orchestrator();
       } else {
         throw new Error("redis_completion_error");
