@@ -1,16 +1,4 @@
-export interface ChunkInfo<T> {
-  data: T[];
-  sizeInMB: number;
-}
-
-export interface ExtractedDataType {
-  id: number;
-  author: string | null;
-  content: string | null;
-  email: Array<string> | null;
-  phoneNumber: Array<string> | null;
-  linkedInURL: string | null;
-}
+import { ChunkInfo, ExtractedDataType } from "./common.types";
 
 export interface BatchInfo<T> {
   batch: ChunkInfo<T>[];

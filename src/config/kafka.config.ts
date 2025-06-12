@@ -1,6 +1,6 @@
 export const kafkaConfig = {
-  clientId: "scrapd-backend",
-  brokers: ["localhost:9092"],
+  clientId: "scrapedIen-backend",
+  brokers: ["192.168.29.133:9092"],
   topic: "email-chunks",
 };
 

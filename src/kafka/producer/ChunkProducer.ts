@@ -1,38 +1,66 @@
-import { Kafka, Producer } from "kafkajs";
-import { kafkaConfig, producerConfig } from "../../config/kafka.config";
+import { Message, Producer, ProducerBatch } from "kafkajs";
+import { KafkaClient } from "../kafkaClient";
+import { ExtractedDataType } from "../../types/common.types";
 
 export class ChunkProducer {
   private producer: Producer;
-  private isConnected: boolean = false;
 
   constructor() {
-    const kafka = new Kafka(kafkaConfig);
-    this.producer = kafka.producer(producerConfig);
+    this.producer = this.createProducer();
   }
 
-  async connect(): Promise<void> {
+  private createProducer(): Producer {
+    const kafka = KafkaClient.initKafka();
+    return kafka.producer();
+  }
+
+  public async start(): Promise<void> {
     try {
       await this.producer.connect();
-      this.isConnected = true;
-      console.log("Successfully connected to Kafka");
+      console.log("Producer connected successfully");
     } catch (error) {
-      console.error("Failed to connect to Kafka:", error);
+      console.error("Error connecting the producer:", error);
       throw error;
     }
   }
 
-  async disconnect(): Promise<void> {
+  public async sendBatch(messages: Array<ExtractedDataType>) {
+    try {
+      const kafkaMessages: Array<Message> = messages.map((message) => {
+        return {
+          value: JSON.stringify(message),
+        };
+      });
+
+      const topicMessages = {
+        topic: "email-chunks",
+        messages: kafkaMessages,
+      };
+
+      const batch: ProducerBatch = {
+        topicMessages: [topicMessages],
+      };
+
+      await this.producer.sendBatch(batch);
+    } catch (error) {
+      console.error("Error sending the batch:", error);
+      throw error;
+    }
+  }
+
+  public async shutdown(): Promise<void> {
     try {
       await this.producer.disconnect();
-      this.isConnected = false;
-      console.log("Disconnected from Kafka");
+      setTimeout(() => {
+        console.log("Producer disconnected successfully after 1 second");
+      }, 1000);
     } catch (error) {
-      console.error("Failed to disconnect from Kafka:", error);
+      console.error("Error disconnecting the producer:", error);
       throw error;
     }
   }
 
-  isKafkaConnected(): boolean {
-    return this.isConnected;
+  public getProducer(): Producer {
+    return this.producer;
   }
 }

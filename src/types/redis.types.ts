@@ -1,3 +1,5 @@
+import { ChunkInfo, ExtractedDataType } from "./common.types";
+
 export interface RedisBatchMetadata {
   totalChunks: number;
   startTime: number;
@@ -6,7 +8,7 @@ export interface RedisBatchMetadata {
 }
 
 export interface RedisChunkData {
-  data: any;
+  data: ChunkInfo<ExtractedDataType>;
   timestamp: number;
   attempts: number;
 }

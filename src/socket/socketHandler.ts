@@ -1,12 +1,13 @@
 import { Server, Socket } from "socket.io";
 import {
-  // ChunkedDataPayload,
   QueueDecodeStartData,
   ChunkData,
   ChunkDataComplete,
   ChunkDataFatal,
 } from "../types/socket.types";
 import { RedisBatchManager } from "../services/redis-batch.service";
+import { ChunkProducer } from "../kafka/producer/ChunkProducer";
+import { kafkaProducerDataOrganizer } from "../helpers/kafkaProducerDataOrganizer";
 
 export class SocketHandler {
   private redisBatchManager: RedisBatchManager;
@@ -75,6 +76,19 @@ export class SocketHandler {
 
       if (isComplete === true) {
         this.io.emit("chunk:data:complete:ack");
+
+        const chunks = await this.redisBatchManager.getAllChunksData(
+          data.batchId
+        );
+
+        const kafkaProducerData = kafkaProducerDataOrganizer(chunks);
+
+        const chunkProducer = new ChunkProducer();
+        await chunkProducer.start();
+
+        await chunkProducer.sendBatch(kafkaProducerData);
+
+        await chunkProducer.shutdown();
 
         // Here you would trigger your Kafka processing to consume the data
       } else {
