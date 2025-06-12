@@ -8,6 +8,7 @@ import {
 import { RedisBatchManager } from "../services/redis-batch.service";
 import { ChunkProducer } from "../kafka/producer/ChunkProducer";
 import { kafkaProducerDataOrganizer } from "../helpers/kafkaProducerDataOrganizer";
+import ChunkConsumer from "../kafka/consumer/ChunkConsumer";
 
 export class SocketHandler {
   private redisBatchManager: RedisBatchManager;
@@ -83,14 +84,18 @@ export class SocketHandler {
 
         const kafkaProducerData = kafkaProducerDataOrganizer(chunks);
 
+        // 1. Initialize and start the consumer first
+        const chunkConsumer = new ChunkConsumer();
+        await chunkConsumer.startConsumer();
+
+        // 2. Then produce messages
         const chunkProducer = new ChunkProducer();
         await chunkProducer.start();
-
         await chunkProducer.sendBatch(kafkaProducerData);
-
         await chunkProducer.shutdown();
 
-        // Here you would trigger your Kafka processing to consume the data
+        // 3. Optional: Wait for some time to ensure processing
+        // await chunkConsumer.shutdown();
       } else {
         throw new Error("redis_completion_error");
       }
