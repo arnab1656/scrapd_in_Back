@@ -26,8 +26,10 @@ export class ChunkProducer {
 
   public async sendBatch(messages: Array<ExtractedDataType>) {
     try {
-      const kafkaMessages: Array<Message> = messages.map((message) => {
+      console.log("messages are being sent to kafka --> producer");
+      const kafkaMessages: Array<Message> = messages.map((message, index) => {
         return {
+          key: (index + 1).toString() as string,
           value: JSON.stringify(message),
         };
       });
@@ -43,7 +45,7 @@ export class ChunkProducer {
 
       await this.producer.sendBatch(batch);
     } catch (error) {
-      console.error("Error sending the batch:", error);
+      console.error("Error sending the batch");
       throw error;
     }
   }

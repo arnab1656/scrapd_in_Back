@@ -125,24 +125,20 @@ export class RedisBatchManager {
     const chunkKey = this.getChunkKey(batchId);
 
     try {
-      // Get all chunks from Redis
       const rawChunks = await this.redis.hgetall(chunkKey);
 
       if (!rawChunks || Object.keys(rawChunks).length === 0) {
         throw new Error(`No chunks found for batch ${batchId}`);
       }
-
-      // Convert and sort chunks
-      const chunks = Object.entries(rawChunks)
-        .map(([chunkIndex, chunkDataStr]) => {
+      const chunks = Object.entries(rawChunks).map(
+        ([chunkIndex, chunkDataStr]) => {
           const chunkData = JSON.parse(chunkDataStr) as RedisChunkData;
           return {
             ...chunkData,
             index: parseInt(chunkIndex),
           };
-        })
-        .sort((a, b) => a.index - b.index)
-        .map(({ index, ...chunk }) => chunk);
+        }
+      );
 
       return chunks;
     } catch (error) {
