@@ -6,10 +6,18 @@ export class PhoneOperations {
     phoneNumber: string
   ): Promise<PhoneNumber> {
     try {
-      return await prisma.phoneNumber.upsert({
+      // First try to find the phone number
+      const existingPhone = await prisma.phoneNumber.findUnique({
         where: { phoneNumber },
-        update: {},
-        create: { phoneNumber },
+      });
+
+      if (existingPhone) {
+        return existingPhone;
+      }
+
+      // If not found, create new
+      return await prisma.phoneNumber.create({
+        data: { phoneNumber },
       });
     } catch (error) {
       console.error("Error finding or creating phone:", error);
@@ -22,12 +30,25 @@ export class PhoneOperations {
     phoneNumberId: number
   ): Promise<void> {
     try {
-      await prisma.authorPhone.create({
-        data: {
-          authorId,
-          phoneNumberId,
+      // Check if connection already exists
+      const existingConnection = await prisma.authorPhone.findUnique({
+        where: {
+          authorId_phoneNumberId: {
+            authorId,
+            phoneNumberId,
+          },
         },
       });
+
+      // Only create if connection doesn't exist
+      if (!existingConnection) {
+        await prisma.authorPhone.create({
+          data: {
+            authorId,
+            phoneNumberId,
+          },
+        });
+      }
     } catch (error) {
       console.error("Error connecting phone to author:", error);
       throw error;

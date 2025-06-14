@@ -38,10 +38,16 @@ export class AuthorOperations {
     }
   }
 
-  public static async createAuthor(name: string): Promise<Author> {
+  public static async createAuthor(
+    name: string,
+    linkedInURL: string
+  ): Promise<Author> {
     try {
       return await prisma.author.create({
-        data: { name },
+        data: {
+          name,
+          linkedInURL,
+        },
       });
     } catch (error) {
       console.error("Error creating author:", error);

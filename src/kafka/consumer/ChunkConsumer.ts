@@ -5,7 +5,8 @@ import {
   EachMessagePayload,
 } from "kafkajs";
 import { KafkaClient } from "../kafkaClient";
-import { AuthorOperations } from "../../db/operations/author.operations";
+import { AuthorService } from "../../db/services/author.service";
+import { AuthorInput } from "../../db/services/author.service";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
@@ -35,33 +36,28 @@ export default class ChunkConsumer {
             console.log("parsedObj is ", parsedObj);
             console.log("kafkaProducerDataLength is ", kafkaProducerDataLength);
 
-            const author = await AuthorOperations.findAuthorByName(
-              parsedObj.author
-            );
-            if (!author) {
-              const newAuthor = await AuthorOperations.createAuthor(
-                parsedObj.author
-              );
-              console.log("newAuthor is ", newAuthor);
-            }
+            try {
+              const newAuthor =
+                await AuthorService.createOrGetAuthorWithRelations({
+                  name: "Arnab Paul",
+                  emails: [
+                    "arnab@example.com",
+                    "arnab.work@example.com",
+                    "arnab.personal@example.com",
+                  ],
+                  phoneNumbers: ["+1234567890", "+1987654321", "+1987654321"],
+                  content:
+                    "This is Arnab's content about technology and the JOb he has been doing for the last 10 years",
+                  linkedInURL: "https://arnab.com/arnab-paul1",
+                } as AuthorInput);
 
-            console.log("author is ", author);
+              console.log("Created/Found Author:", newAuthor);
+            } catch (error) {
+              console.log("Failed to create/get author:", error);
+            }
 
             resolve(true);
             return;
-
-            // await new Promise<void>((resolveTimeout) => {
-            //   setTimeout(() => {
-            //     console.log(`- index ${message.key} processing completed`);
-            //     this.processedCount++;
-            //     resolveTimeout();
-
-            //     if (this.messageCount === kafkaProducerDataLength) {
-            //       console.log("All messages have been processed!");
-            //       resolve(true);
-            //     }
-            //   }, 200);
-            // });
           },
         });
       });
