@@ -5,6 +5,7 @@ import {
   EachMessagePayload,
 } from "kafkajs";
 import { KafkaClient } from "../kafkaClient";
+import { AuthorOperations } from "../../db/operations/author.operations";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
@@ -29,19 +30,38 @@ export default class ChunkConsumer {
             this.messageCount++;
 
             console.log(`- index ${message.key} started processing`);
+            const parsedObj = JSON.parse(message.value as unknown as string);
 
-            await new Promise<void>((resolveTimeout) => {
-              setTimeout(() => {
-                console.log(`- index ${message.key} processing completed`);
-                this.processedCount++;
-                resolveTimeout();
+            console.log("parsedObj is ", parsedObj);
+            console.log("kafkaProducerDataLength is ", kafkaProducerDataLength);
 
-                if (this.messageCount === kafkaProducerDataLength) {
-                  console.log("All messages have been processed!");
-                  resolve(true);
-                }
-              }, 200);
-            });
+            const author = await AuthorOperations.findAuthorByName(
+              parsedObj.author
+            );
+            if (!author) {
+              const newAuthor = await AuthorOperations.createAuthor(
+                parsedObj.author
+              );
+              console.log("newAuthor is ", newAuthor);
+            }
+
+            console.log("author is ", author);
+
+            resolve(true);
+            return;
+
+            // await new Promise<void>((resolveTimeout) => {
+            //   setTimeout(() => {
+            //     console.log(`- index ${message.key} processing completed`);
+            //     this.processedCount++;
+            //     resolveTimeout();
+
+            //     if (this.messageCount === kafkaProducerDataLength) {
+            //       console.log("All messages have been processed!");
+            //       resolve(true);
+            //     }
+            //   }, 200);
+            // });
           },
         });
       });
