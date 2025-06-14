@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Author {
+  id           Int             @id @default(autoincrement())
+  name         String?       
+  linkedInURL  String?         @unique
+  contents     Content[]    
+  emails       AuthorEmail[] 
+  phoneNumbers AuthorPhone[]   
+}
+
+model Content {
+  id              Int             @id @default(autoincrement())
+  content         String?
+  author          Author          @relation(fields: [authorId], references: [id])
+  authorId        Int
+  contentEmails   ContentEmail[] 
+}
+
+model Email {
+  id              Int             @id @default(autoincrement())
+  email           String          @unique
+  contentEmails   ContentEmail[] 
+  authors         AuthorEmail[]  
+}
+
+model PhoneNumber {
+  id              Int             @id @default(autoincrement())
+  phoneNumber     String          @unique
+  authors         AuthorPhone[]   
+}
+
+model ContentEmail {
+  id          Int     @id @default(autoincrement())
+  content     Content @relation(fields: [contentId], references: [id])
+  contentId   Int
+
+  email       Email   @relation(fields: [emailId], references: [id])
+  emailId     Int
+
+  isEmailSent Boolean @default(false)
+  sentAt      DateTime?
+
+  @@unique([contentId, emailId])
+}
+
+model AuthorEmail {
+  author     Author @relation(fields: [authorId], references: [id])
+  authorId   Int
+
+  email      Email  @relation(fields: [emailId], references: [id])
+  emailId    Int
+
+  @@id([authorId, emailId]) 
+}
+
+model AuthorPhone {
+  author       Author      @relation(fields: [authorId], references: [id])
+  authorId     Int
+
+  phoneNumber  PhoneNumber @relation(fields: [phoneNumberId], references: [id])
+  phoneNumberId Int
+
+  @@id([authorId, phoneNumberId]) 
+}
