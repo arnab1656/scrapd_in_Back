@@ -5,15 +5,15 @@ import {
   EachMessagePayload,
 } from "kafkajs";
 import { KafkaClient } from "../kafkaClient";
-import { AuthorService } from "../../db/services/author.service";
-import { AuthorInput } from "../../db/services/author.service";
+// import { AuthorService } from "../../db/services/author.service";
+// import { AuthorInput } from "../../db/services/author.service";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
   private messageCount: number = 0;
   private processedCount: number = 0;
 
-  public constructor() {
+  constructor() {
     this.kafkaConsumer = this.createKafkaConsumer();
   }
 
@@ -22,7 +22,10 @@ export default class ChunkConsumer {
   ): Promise<boolean> {
     try {
       await this.kafkaConsumer.connect();
-      await this.kafkaConsumer.subscribe({ topics: ["email-chunks"] });
+      await this.kafkaConsumer.subscribe({
+        topics: ["email-chunks"],
+        fromBeginning: true,
+      });
 
       return new Promise<boolean>((resolve) => {
         this.kafkaConsumer.run({
@@ -30,34 +33,29 @@ export default class ChunkConsumer {
             const { message } = messagePayload;
             this.messageCount++;
 
-            console.log(`- index ${message.key} started processing`);
-            const parsedObj = JSON.parse(message.value as unknown as string);
-
-            console.log("parsedObj is ", parsedObj);
-            console.log("kafkaProducerDataLength is ", kafkaProducerDataLength);
-
             try {
-              const newAuthor =
-                await AuthorService.createOrGetAuthorWithRelations({
-                  name: "Arnab Paul",
-                  emails: [
-                    "arnab@example.com",
-                    "arnab.work@example.com",
-                    "arnab.personal@example.com",
-                  ],
-                  phoneNumbers: ["+1234567890", "+1987654321", "+1987654321"],
-                  content:
-                    "This is Arnab's content about technology and the JOb he has been doing for the last 10 years",
-                  linkedInURL: "https://arnab.com/arnab-paul1",
-                } as AuthorInput);
+              const parsedObj = JSON.parse(message.value as unknown as string);
 
-              console.log("Created/Found Author:", newAuthor);
+              console.log("Processing data:", parsedObj);
+
+              // const newAuthor =
+              //   await AuthorService.createOrGetAuthorWithRelations({
+              //     name: parsedObj.author,
+              //     emails: parsedObj.emails,
+              //     phoneNumbers: parsedObj.phoneNumbers,
+              //     content: parsedObj.content,
+              //     linkedInURL: parsedObj.linkedInURL,
+              //   } as AuthorInput);
+
+              // console.log("Successfully processed author:", newAuthor.id);
+              this.processedCount++;
+
+              if (this.messageCount === kafkaProducerDataLength) {
+                resolve(true);
+              }
             } catch (error) {
-              console.log("Failed to create/get author:", error);
+              console.error("Error processing message:", error);
             }
-
-            resolve(true);
-            return;
           },
         });
       });
@@ -81,8 +79,8 @@ export default class ChunkConsumer {
           const { batch } = eachBatchPayload;
 
           for (const message of batch.messages) {
-            const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
-            console.log(`- ${prefix} ${message.key}#${message.value}`);
+            message;
+            // const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
           }
         },
       });
@@ -92,20 +90,33 @@ export default class ChunkConsumer {
   }
 
   public async shutdown(): Promise<void> {
-    console.log("shutting down the consumer signal handler");
-    await this.kafkaConsumer.disconnect();
+    try {
+      await this.kafkaConsumer.disconnect();
+    } catch (error) {
+      console.error("Error shutting down consumer:", error);
+      throw error;
+    }
   }
 
   private createKafkaConsumer(): Consumer {
     try {
       const kafka = KafkaClient.initKafka();
-      const consumer = kafka.consumer({ groupId: "chunk-consumer-group" });
-
-      console.log("createKafkaConsumer is created");
+      const consumer = kafka.consumer({
+        groupId: "chunk-consumer-group",
+        retry: {
+          initialRetryTime: 100,
+          retries: 8,
+        },
+        sessionTimeout: 30000,
+        heartbeatInterval: 3000,
+        maxBytesPerPartition: 1048576, // 1MB
+        maxWaitTimeInMs: 5000,
+      });
 
       return consumer;
     } catch (error) {
-      throw new Error("error in createKafkaConsumer Creation");
+      console.error("Error creating Kafka consumer:", error);
+      throw new Error("Failed to create Kafka consumer");
     }
   }
 

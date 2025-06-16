@@ -1,5 +1,7 @@
 import { Content } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { PrismaService } from "../../lib/prisma";
+
+const prisma = PrismaService.getInstance().getClient();
 
 export class ContentOperations {
   public static async createContent(

@@ -1,5 +1,5 @@
 import { Author, Email, PhoneNumber, Content } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { PrismaService } from "../../lib/prisma";
 
 export type AuthorWithRelations = Author & {
   emails: {
@@ -10,6 +10,8 @@ export type AuthorWithRelations = Author & {
   }[];
   contents: Content[];
 };
+
+const prisma = PrismaService.getInstance().getClient();
 
 export class AuthorOperations {
   public static async findAuthorByName(

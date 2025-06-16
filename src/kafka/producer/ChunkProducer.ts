@@ -1,4 +1,4 @@
-import { Message, Producer, ProducerBatch } from "kafkajs";
+import { Message, Producer, ProducerBatch, Partitioners } from "kafkajs";
 import { KafkaClient } from "../kafkaClient";
 import { ExtractedDataType } from "../../types/common.types";
 
@@ -11,7 +11,14 @@ export class ChunkProducer {
 
   private createProducer(): Producer {
     const kafka = KafkaClient.initKafka();
-    return kafka.producer();
+    return kafka.producer({
+      createPartitioner: Partitioners.LegacyPartitioner,
+      retry: {
+        initialRetryTime: 100,
+        retries: 8,
+      },
+      transactionTimeout: 30000,
+    });
   }
 
   public async start(): Promise<void> {
@@ -26,7 +33,6 @@ export class ChunkProducer {
 
   public async sendBatch(messages: Array<ExtractedDataType>) {
     try {
-      console.log("messages are being sent to kafka --> producer");
       const kafkaMessages: Array<Message> = messages.map((message, index) => {
         return {
           key: (index + 1).toString() as string,
@@ -43,9 +49,10 @@ export class ChunkProducer {
         topicMessages: [topicMessages],
       };
 
-      await this.producer.sendBatch(batch);
+      const result = await this.producer.sendBatch(batch);
+      console.log("Batch sent successfully. Result:", result);
     } catch (error) {
-      console.error("Error sending the batch");
+      console.error("Error sending the batch:", error);
       throw error;
     }
   }
@@ -53,9 +60,6 @@ export class ChunkProducer {
   public async shutdown(): Promise<void> {
     try {
       await this.producer.disconnect();
-      setTimeout(() => {
-        console.log("Producer disconnected successfully after 1 second");
-      }, 1000);
     } catch (error) {
       console.error("Error disconnecting the producer:", error);
       throw error;

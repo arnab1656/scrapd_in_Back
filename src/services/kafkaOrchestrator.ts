@@ -36,6 +36,7 @@ export class KafkaOrchestrator {
         await this.chunkConsumer.shutdown();
       }
     } catch (error) {
+      console.error("Error in consumer startup:", error);
       throw error;
     }
   }
@@ -46,15 +47,21 @@ export class KafkaOrchestrator {
       await this.producer.sendBatch(kafkaProducerData);
       await this.producer.shutdown();
     } catch (error) {
+      console.error("Error in producer handling:", error);
       throw error;
     }
   }
 
   public async orchestrator() {
     try {
-      await this.handleConsumerStartUp();
-      await this.handleProducer(this.kafkaProducerData);
+      await Promise.all([
+        this.handleConsumerStartUp(),
+        this.handleProducer(this.kafkaProducerData),
+      ]);
+
+      console.log("Orchestrator completed successfully");
     } catch (error) {
+      console.error("Error in orchestrator:", error);
       if (this.chunkConsumer && this.producer) {
         await this.chunkConsumer.shutdown();
         await this.producer.shutdown();

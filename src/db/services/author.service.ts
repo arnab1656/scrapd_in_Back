@@ -6,7 +6,7 @@ import {
 import { EmailOperations } from "../operations/email.operations";
 import { PhoneOperations } from "../operations/phone.operations";
 import { ContentOperations } from "../operations/content.operations";
-import { prisma } from "../../lib/prisma";
+import { PrismaService } from "../../lib/prisma";
 
 export interface AuthorInput {
   name: string;
@@ -15,6 +15,8 @@ export interface AuthorInput {
   content: string;
   linkedInURL: string;
 }
+
+const prisma = PrismaService.getInstance().getClient();
 
 export class AuthorService {
   public static async createOrGetAuthorWithRelations({

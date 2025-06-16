@@ -1,5 +1,7 @@
 import { Email } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { PrismaService } from "../../lib/prisma";
+
+const prisma = PrismaService.getInstance().getClient();
 
 export class EmailOperations {
   public static async findOrCreateEmail(email: string): Promise<Email> {

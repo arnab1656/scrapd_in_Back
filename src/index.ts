@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { ServerConfig } from "./config/server.config";
 import { SocketHandler } from "./socket/socketHandler";
 import { initKafkaAdmin } from "./kafka/admin";
+import { PrismaService } from "./lib/prisma";
 
 // import { ChunkProducer } from "./kafka/producer/ChunkProducer";
 
@@ -24,3 +25,5 @@ httpServer.listen(ServerConfig.port, () => {
 });
 
 initKafkaAdmin();
+
+PrismaService.getInstance().connect();

@@ -1,5 +1,7 @@
 import { PhoneNumber } from "@prisma/client";
-import { prisma } from "../../lib/prisma";
+import { PrismaService } from "../../lib/prisma";
+
+const prisma = PrismaService.getInstance().getClient();
 
 export class PhoneOperations {
   public static async findOrCreatePhone(
