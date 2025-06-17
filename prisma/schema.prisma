@@ -27,14 +27,14 @@ model Content {
 
 model Email {
   id              Int             @id @default(autoincrement())
-  email           String          @unique
+  email           String?         @unique
   contentEmails   ContentEmail[] 
   authors         AuthorEmail[]  
 }
 
 model PhoneNumber {
   id              Int             @id @default(autoincrement())
-  phoneNumber     String          @unique
+  phoneNumber     String?         @unique
   authors         AuthorPhone[]   
 }
 

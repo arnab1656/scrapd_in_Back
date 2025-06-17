@@ -5,16 +5,36 @@ import {
   EachMessagePayload,
 } from "kafkajs";
 import { KafkaClient } from "../kafkaClient";
-// import { AuthorService } from "../../db/services/author.service";
-// import { AuthorInput } from "../../db/services/author.service";
+import { AuthorService } from "../../db/services/author.service";
+import { AuthorInput } from "../../db/services/author.service";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
   private messageCount: number = 0;
-  private processedCount: number = 0;
+
+  private currentProcessingPromise: Promise<void> | null = null;
 
   constructor() {
     this.kafkaConsumer = this.createKafkaConsumer();
+  }
+
+  private async processMessageWithDB(parsedObj: any): Promise<void> {
+    try {
+      console.log("Starting DB operation for:", parsedObj.author);
+
+      const newAuthor = await AuthorService.createOrGetAuthorWithRelations({
+        name: parsedObj.author,
+        emails: parsedObj.email,
+        phoneNumbers: parsedObj.phoneNumber,
+        content: parsedObj.content,
+        linkedInURL: parsedObj.linkedInURL,
+      } as AuthorInput);
+
+      console.log("DB operation completed for author:", newAuthor.id);
+    } catch (error) {
+      console.error("Error in DB operation:", error);
+      throw error;
+    }
   }
 
   public async startConsumer(
@@ -35,26 +55,29 @@ export default class ChunkConsumer {
 
             try {
               const parsedObj = JSON.parse(message.value as unknown as string);
+              console.log("Received message for:", parsedObj.author);
 
-              console.log("Processing data:", parsedObj);
+              if (this.currentProcessingPromise) {
+                console.log("Waiting for previous message to complete...");
+                await this.currentProcessingPromise;
+              }
 
-              // const newAuthor =
-              //   await AuthorService.createOrGetAuthorWithRelations({
-              //     name: parsedObj.author,
-              //     emails: parsedObj.emails,
-              //     phoneNumbers: parsedObj.phoneNumbers,
-              //     content: parsedObj.content,
-              //     linkedInURL: parsedObj.linkedInURL,
-              //   } as AuthorInput);
+              this.currentProcessingPromise =
+                this.processMessageWithDB(parsedObj);
+              await this.currentProcessingPromise;
 
-              // console.log("Successfully processed author:", newAuthor.id);
-              this.processedCount++;
+              console.log(
+                "Message processing completed for:",
+                parsedObj.author
+              );
 
               if (this.messageCount === kafkaProducerDataLength) {
+                console.log("All messages processed");
                 resolve(true);
               }
             } catch (error) {
-              console.error("Error processing message:", error);
+              console.error("Error in message processing:", error);
+              this.currentProcessingPromise = null;
             }
           },
         });
@@ -91,6 +114,10 @@ export default class ChunkConsumer {
 
   public async shutdown(): Promise<void> {
     try {
+      // Wait for any ongoing processing to complete
+      if (this.currentProcessingPromise) {
+        await this.currentProcessingPromise;
+      }
       await this.kafkaConsumer.disconnect();
     } catch (error) {
       console.error("Error shutting down consumer:", error);
@@ -121,10 +148,9 @@ export default class ChunkConsumer {
   }
 
   // Method to get processing status
-  public getProcessingStatus(): { total: number; processed: number } {
+  public getProcessingStatus(): { total: number } {
     return {
       total: this.messageCount,
-      processed: this.processedCount,
     };
   }
 }

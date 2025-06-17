@@ -19,71 +19,104 @@ export interface AuthorInput {
 const prisma = PrismaService.getInstance().getClient();
 
 export class AuthorService {
-  public static async createOrGetAuthorWithRelations({
-    name,
-    emails,
-    phoneNumbers,
-    content,
-    linkedInURL,
-  }: AuthorInput): Promise<AuthorWithRelations> {
+  static async createOrGetAuthorWithRelations(
+    authorData: AuthorInput
+  ): Promise<AuthorWithRelations> {
     try {
-      // 1. Create/Get Author
-      const author = await prisma.$transaction(async () => {
-        let author = await AuthorOperations.findAuthorByName(name);
-        if (!author) {
-          author = (await AuthorOperations.createAuthor(
-            name,
-            linkedInURL
-          )) as AuthorWithRelations;
+      const author = await prisma.$transaction(async (tx) => {
+        const existingAuthor = await AuthorOperations.findAuthorByName(
+          authorData.name
+        );
+
+        if (existingAuthor) {
+          console.log("Found existing author:", existingAuthor.id);
+          await tx.content.create({
+            data: {
+              content: authorData.content || "",
+              authorId: existingAuthor.id,
+            },
+          });
+          console.log(
+            "Added new content to existing author:",
+            existingAuthor.id
+          );
+          return existingAuthor;
         }
-        return author;
+
+        const newAuthor = await tx.author.create({
+          data: {
+            name: authorData.name,
+            linkedInURL: authorData.linkedInURL,
+            contents: {
+              create: {
+                content: authorData.content || "",
+              },
+            },
+          },
+          include: {
+            contents: true,
+          },
+        });
+
+        return newAuthor;
       });
 
-      // 2. Process Emails
-      await prisma.$transaction(async () => {
-        const emailPromises = emails.map(async (email) => {
-          const emailRecord = await EmailOperations.findOrCreateEmail(email);
-          await EmailOperations.connectEmailToAuthor(author.id, emailRecord.id);
-        });
-        await Promise.all(emailPromises);
-      });
-
-      // 3. Process Phones - Sequentially to avoid race conditions
-      for (const phone of phoneNumbers) {
-        await prisma.$transaction(async () => {
-          const phoneRecord = await PhoneOperations.findOrCreatePhone(phone);
-          await PhoneOperations.connectPhoneToAuthor(author.id, phoneRecord.id);
-        });
+      if (authorData.emails && authorData.emails.length > 0) {
+        console.log("Processing emails for author:", author.id);
+        for (const email of authorData.emails) {
+          try {
+            await prisma.$transaction(async () => {
+              console.log(`Processing email: ${email}`);
+              const emailRecord = await EmailOperations.findOrCreateEmail(
+                email
+              );
+              await EmailOperations.connectEmailToAuthor(
+                author.id,
+                emailRecord.id
+              );
+              console.log(`Successfully processed email: ${email}`);
+            });
+          } catch (error) {
+            console.error(`Error processing email ${email}:`, error);
+          }
+        }
+      } else {
+        console.log("No emails provided for author:", author.id);
       }
 
-      // 4. Create Content
-      if (content) {
-        await prisma.$transaction(async () => {
-          const contentRecord = await ContentOperations.createContent(
-            author.id,
-            content
-          );
-          const authorEmails = await EmailOperations.findEmailsByAuthorId(
-            author.id
-          );
-          await ContentOperations.connectContentToEmails(
-            contentRecord.id,
-            authorEmails.map((e) => e.id)
-          );
-        });
+      if (authorData.phoneNumbers && authorData.phoneNumbers.length > 0) {
+        console.log("Processing phone numbers for author:", author.id);
+        for (const phone of authorData.phoneNumbers) {
+          try {
+            await prisma.$transaction(async () => {
+              console.log(`Processing phone: ${phone}`);
+              const phoneRecord = await PhoneOperations.findOrCreatePhone(
+                phone
+              );
+              await PhoneOperations.connectPhoneToAuthor(
+                author.id,
+                phoneRecord.id
+              );
+              console.log(`Successfully processed phone: ${phone}`);
+            });
+          } catch (error) {
+            console.error(`Error processing phone ${phone}:`, error);
+          }
+        }
+      } else {
+        console.log("No phone numbers provided for author:", author.id);
       }
 
-      // 5. Get final result
-      const authorWithRelations = await AuthorOperations.getAuthorWithRelations(
+      const completeAuthor = await AuthorOperations.getAuthorWithRelations(
         author.id
       );
-      if (!authorWithRelations) {
+      if (!completeAuthor) {
         throw new Error(
-          "Failed to retrieve author with relations after creation"
+          `Failed to fetch complete author data for ID: ${author.id}`
         );
       }
 
-      return authorWithRelations;
+      return completeAuthor;
     } catch (error) {
       console.error("Error in createOrGetAuthorWithRelations:", error);
       throw error;
