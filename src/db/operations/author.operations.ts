@@ -42,13 +42,24 @@ export class AuthorOperations {
 
   public static async createAuthor(
     name: string,
-    linkedInURL: string
+    linkedInURL: string,
+    content: string
   ): Promise<Author> {
     try {
       return await prisma.author.create({
         data: {
           name,
           linkedInURL,
+          contents: content
+            ? {
+                create: {
+                  content: content,
+                },
+              }
+            : undefined,
+        },
+        include: {
+          contents: true,
         },
       });
     } catch (error) {

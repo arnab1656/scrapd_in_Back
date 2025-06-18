@@ -22,28 +22,27 @@ export class EmailOperations {
     emailId: number
   ): Promise<void> {
     try {
+      const existingRelation = await prisma.authorEmail.findFirst({
+        where: {
+          authorId,
+          emailId,
+        },
+      });
+
+      if (existingRelation) {
+        console.log("Email is already connected to the author");
+        return;
+      }
+
       await prisma.authorEmail.create({
         data: {
           authorId,
           emailId,
         },
       });
+      console.log("Successfully connected email to author");
     } catch (error) {
       console.error("Error connecting email to author:", error);
-      throw error;
-    }
-  }
-
-  public static async findEmailsByAuthorId(authorId: number): Promise<Email[]> {
-    try {
-      const authorEmails = await prisma.authorEmail.findMany({
-        where: { authorId },
-        include: { email: true },
-      });
-      return authorEmails.map((ae) => ae.email);
-    } catch (error) {
-      console.error("Error finding emails by author ID:", error);
-      throw error;
     }
   }
 }

@@ -26,6 +26,17 @@ export class PhoneOperations {
     phoneNumberId: number
   ): Promise<void> {
     try {
+      const existingRelation = await prisma.authorPhone.findFirst({
+        where: {
+          authorId,
+          phoneNumberId,
+        },
+      });
+
+      if (existingRelation) {
+        return;
+      }
+
       await prisma.authorPhone.create({
         data: {
           authorId,
@@ -33,23 +44,7 @@ export class PhoneOperations {
         },
       });
     } catch (error) {
-      console.error("Error connecting phone to author:", error);
-      throw error;
-    }
-  }
-
-  public static async findPhonesByAuthorId(
-    authorId: number
-  ): Promise<PhoneNumber[]> {
-    try {
-      const authorPhones = await prisma.authorPhone.findMany({
-        where: { authorId },
-        include: { phoneNumber: true },
-      });
-      return authorPhones.map((ap) => ap.phoneNumber);
-    } catch (error) {
-      console.error("Error finding phones by author ID:", error);
-      throw error;
+      console.error("Error connecting phone number to author:", error);
     }
   }
 }

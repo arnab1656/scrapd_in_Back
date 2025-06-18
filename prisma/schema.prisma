@@ -9,65 +9,61 @@ datasource db {
 }
 
 model Author {
-  id           Int             @id @default(autoincrement())
-  name         String?       
-  linkedInURL  String?         @unique
-  contents     Content[]    
-  emails       AuthorEmail[] 
-  phoneNumbers AuthorPhone[]   
+  id           Int           @id @default(autoincrement())
+  name         String?
+  linkedInURL  String?       @unique
+  emails       AuthorEmail[]
+  phoneNumbers AuthorPhone[]
+  contents     Content[]
 }
 
 model Content {
-  id              Int             @id @default(autoincrement())
-  content         String?
-  author          Author          @relation(fields: [authorId], references: [id])
-  authorId        Int
-  contentEmails   ContentEmail[] 
+  id            Int            @id @default(autoincrement())
+  content       String?
+  authorId      Int
+  author        Author         @relation(fields: [authorId], references: [id])
+  contentEmails ContentEmail[]
 }
 
 model Email {
-  id              Int             @id @default(autoincrement())
-  email           String?         @unique
-  contentEmails   ContentEmail[] 
-  authors         AuthorEmail[]  
+  id            Int            @id @default(autoincrement())
+  email         String?        @unique
+  authors       AuthorEmail[]
+  contentEmails ContentEmail[]
 }
 
 model PhoneNumber {
-  id              Int             @id @default(autoincrement())
-  phoneNumber     String?         @unique
-  authors         AuthorPhone[]   
+  id          Int           @id @default(autoincrement())
+  phoneNumber String?       @unique
+  authors     AuthorPhone[]
 }
 
 model ContentEmail {
-  id          Int     @id @default(autoincrement())
-  content     Content @relation(fields: [contentId], references: [id])
+  id          Int       @id @default(autoincrement())
   contentId   Int
-
-  email       Email   @relation(fields: [emailId], references: [id])
   emailId     Int
-
-  isEmailSent Boolean @default(false)
+  isEmailSent Boolean   @default(false)
   sentAt      DateTime?
+  content     Content   @relation(fields: [contentId], references: [id])
+  email       Email     @relation(fields: [emailId], references: [id])
 
   @@unique([contentId, emailId])
 }
 
 model AuthorEmail {
-  author     Author @relation(fields: [authorId], references: [id])
-  authorId   Int
+  authorId Int
+  emailId  Int
+  author   Author @relation(fields: [authorId], references: [id])
+  email    Email  @relation(fields: [emailId], references: [id])
 
-  email      Email  @relation(fields: [emailId], references: [id])
-  emailId    Int
-
-  @@id([authorId, emailId]) 
+  @@id([authorId, emailId])
 }
 
 model AuthorPhone {
-  author       Author      @relation(fields: [authorId], references: [id])
-  authorId     Int
-
-  phoneNumber  PhoneNumber @relation(fields: [phoneNumberId], references: [id])
+  authorId      Int
   phoneNumberId Int
+  author        Author      @relation(fields: [authorId], references: [id])
+  phoneNumber   PhoneNumber @relation(fields: [phoneNumberId], references: [id])
 
-  @@id([authorId, phoneNumberId]) 
+  @@id([authorId, phoneNumberId])
 }
