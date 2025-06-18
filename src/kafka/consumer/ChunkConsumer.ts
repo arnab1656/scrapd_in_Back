@@ -7,22 +7,23 @@ import {
 import { KafkaClient } from "../kafkaClient";
 import { AuthorService } from "../../db/services/author.service";
 import { AuthorInput } from "../../db/services/author.service";
+import { QueueService } from "../../queue/services/queue.service";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
   private messageCount: number = 0;
 
   private currentProcessingPromise: Promise<void> | null = null;
+  private queueService: QueueService;
 
   constructor() {
     this.kafkaConsumer = this.createKafkaConsumer();
+    this.queueService = QueueService.getInstance();
   }
 
   private async processMessageWithDB(parsedObj: any): Promise<void> {
     try {
-      console.log("Starting DB operation for:", parsedObj.author);
-
-      const newAuthor = await AuthorService.createOrGetAuthorWithRelations({
+      await AuthorService.createOrGetAuthorWithRelations({
         name: parsedObj.author,
         emails: parsedObj.email,
         phoneNumbers: parsedObj.phoneNumber,
@@ -30,7 +31,7 @@ export default class ChunkConsumer {
         linkedInURL: parsedObj.linkedInURL,
       } as AuthorInput);
 
-      console.log("DB operation completed for author:", newAuthor.id);
+      await this.queueService.prepareAndPushToQueue(parsedObj.content);
     } catch (error) {
       console.error("Error in DB operation:", error);
       throw error;
