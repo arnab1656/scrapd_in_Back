@@ -8,6 +8,7 @@ import { KafkaClient } from "../kafkaClient";
 import { AuthorService } from "../../db/services/author.service";
 import { AuthorInput } from "../../db/services/author.service";
 import { QueueService } from "../../queue/services/queue.service";
+import { EmailAutomationService } from "../../services/email-automation";
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
@@ -74,6 +75,17 @@ export default class ChunkConsumer {
 
               if (this.messageCount === kafkaProducerDataLength) {
                 console.log("All messages processed");
+
+
+                try {
+                  const emailAutomation = EmailAutomationService.getInstance();
+                  await emailAutomation.start();
+                  console.log("Email automation polling started successfully");
+                } catch (error) {
+                  console.error("Failed to start email automation:", error);
+                }
+                
+
                 resolve(true);
               }
             } catch (error) {
