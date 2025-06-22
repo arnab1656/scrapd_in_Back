@@ -18,7 +18,6 @@ export interface EmailStatus {
 export interface QueueItem {
   contentId: number;
   emailId: number;
-  timestamp: Date;
 }
 
 export interface EmailProcessingResult {
@@ -36,6 +35,13 @@ export interface RateLimitStatus {
   nextAvailableTime?: Date;
 }
 
+export interface BackoffStatus {
+  currentDelay: number;
+  maxDelay: number;
+  attemptCount: number;
+  nextAttemptTime: Date;
+}
+
 export interface PollingStatus {
   isPolling: boolean;
   lastPollTime?: Date;
@@ -43,11 +49,21 @@ export interface PollingStatus {
   processingCount: number;
 }
 
-export interface BackoffStatus {
-  currentDelay: number;
-  maxDelay: number;
-  attemptCount: number;
-  nextAttemptTime?: Date;
+// New types for auto-terminate architecture
+export enum PollingResult {
+  COMPLETED = "COMPLETED",   
+  STOPPED = "STOPPED",       
+  ERROR = "ERROR"             
+}
+
+export interface PollingCompletion {
+  status: PollingResult;
+  message: string;
+  processedCount: number;
+  error?: string;
+  duration: number;
+  startTime: Date;
+  endTime: Date;
 }
 
 export enum EmailErrorType {
