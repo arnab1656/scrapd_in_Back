@@ -51,9 +51,9 @@ export interface PollingStatus {
 
 // New types for auto-terminate architecture
 export enum PollingResult {
-  COMPLETED = "COMPLETED",   
-  STOPPED = "STOPPED",       
-  ERROR = "ERROR"             
+  COMPLETED = 'COMPLETED',
+  STOPPED = 'STOPPED',
+  ERROR = 'ERROR',
 }
 
 export interface PollingCompletion {
@@ -67,12 +67,12 @@ export interface PollingCompletion {
 }
 
 export enum EmailErrorType {
-  SMTP_ERROR = "SMTP_ERROR",
-  RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED",
-  INVALID_EMAIL = "INVALID_EMAIL",
-  CONTENT_NOT_FOUND = "CONTENT_NOT_FOUND",
-  DATABASE_ERROR = "DATABASE_ERROR",
-  QUEUE_ERROR = "QUEUE_ERROR",
+  SMTP_ERROR = 'SMTP_ERROR',
+  RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+  INVALID_EMAIL = 'INVALID_EMAIL',
+  CONTENT_NOT_FOUND = 'CONTENT_NOT_FOUND',
+  DATABASE_ERROR = 'DATABASE_ERROR',
+  QUEUE_ERROR = 'QUEUE_ERROR',
 }
 
 export interface EmailError {

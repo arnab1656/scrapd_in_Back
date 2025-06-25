@@ -1,5 +1,5 @@
-import { PhoneNumber } from "@prisma/client";
-import { PrismaService } from "../../lib/prisma";
+import { PhoneNumber } from '@prisma/client';
+import { PrismaService } from '../../lib/prisma';
 
 const prisma = PrismaService.getInstance().getClient();
 
@@ -8,7 +8,7 @@ export class PhoneOperations {
     phoneNumber: string | null
   ): Promise<PhoneNumber> {
     try {
-      const phoneValue = phoneNumber === null ? "" : phoneNumber;
+      const phoneValue = phoneNumber === null ? '' : phoneNumber;
 
       return await prisma.phoneNumber.upsert({
         where: { phoneNumber: phoneValue },
@@ -16,7 +16,7 @@ export class PhoneOperations {
         create: { phoneNumber: phoneValue },
       });
     } catch (error) {
-      console.error("Error finding or creating phone:", error);
+      console.error('Error finding or creating phone:', error);
       throw error;
     }
   }
@@ -44,7 +44,7 @@ export class PhoneOperations {
         },
       });
     } catch (error) {
-      console.error("Error connecting phone number to author:", error);
+      console.error('Error connecting phone number to author:', error);
     }
   }
 }

@@ -1,5 +1,5 @@
-import { ExtractedDataType } from "../types/common.types";
-import { RedisChunkData } from "../types/redis.types";
+import { ExtractedDataType } from '../types/common.types';
+import { RedisChunkData } from '../types/redis.types';
 
 export const kafkaProducerDataOrganizer = (
   ChunkData: Array<RedisChunkData>

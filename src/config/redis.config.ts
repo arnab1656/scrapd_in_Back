@@ -1,15 +1,15 @@
-import { RedisOptions } from "ioredis";
+import { RedisOptions } from 'ioredis';
 
 export const redisConfig: RedisOptions = {
-  host: process.env.REDIS_HOST || "localhost",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
+  host: process.env.REDIS_HOST || '',
+  port: parseInt(process.env.REDIS_PORT || ''),
   maxRetriesPerRequest: 3,
   retryStrategy(times: number) {
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
   reconnectOnError(err) {
-    const targetError = "READONLY";
+    const targetError = 'READONLY';
     if (err.message.includes(targetError)) {
       return true;
     }
@@ -17,6 +17,6 @@ export const redisConfig: RedisOptions = {
   },
 };
 
-export const BATCH_KEY_PREFIX = "batch:";
-export const CHUNK_KEY_PREFIX = "chunk:";
-export const BATCH_TTL = 24 * 60 * 60; // TTL for the batch in seconds
+export const BATCH_KEY_PREFIX = 'batch:';
+export const CHUNK_KEY_PREFIX = 'chunk:';
+export const BATCH_TTL = 24 * 60 * 60;

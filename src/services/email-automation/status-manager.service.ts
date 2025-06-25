@@ -1,12 +1,12 @@
-import { PrismaService } from "../../lib/prisma";
+import { PrismaService } from '../../lib/prisma';
 import {
   EmailStatus,
   EmailProcessingResult,
   EmailError,
   EmailErrorType,
-} from "../../types/email.types";
-import { RateLimiter } from "../../utils/rate.limiter";
-import { BackoffStrategy } from "../../utils/backoff.strategy";
+} from '../../types/email.types';
+import { RateLimiter } from '../../utils/rate.limiter';
+import { BackoffStrategy } from '../../utils/backoff.strategy';
 
 const prisma = PrismaService.getInstance().getClient();
 
@@ -56,7 +56,7 @@ export class StatusManagerService {
         lastError: undefined,
       };
     } catch (error) {
-      console.error("Error checking email status:", error);
+      console.error('Error checking email status:', error);
       throw error;
     }
   }
@@ -95,7 +95,7 @@ export class StatusManagerService {
         );
       }
     } catch (error) {
-      console.error("Error updating email status:", error);
+      console.error('Error updating email status:', error);
       throw error;
     }
   }
@@ -108,7 +108,7 @@ export class StatusManagerService {
     try {
       const emailError: EmailError = {
         type: this.determineErrorType(error),
-        message: error || "Unknown error",
+        message: error || 'Unknown error',
         retryable: this.isRetryableError(error),
         timestamp: new Date(),
       };
@@ -127,7 +127,7 @@ export class StatusManagerService {
         // Note: We might want to add a failed status field to ContentEmail table
       }
     } catch (error) {
-      console.error("Error handling email failure:", error);
+      console.error('Error handling email failure:', error);
       throw error;
     }
   }
@@ -135,19 +135,19 @@ export class StatusManagerService {
   private determineErrorType(error?: string): EmailErrorType {
     if (!error) return EmailErrorType.DATABASE_ERROR;
 
-    if (error.includes("SMTP") || error.includes("smtp")) {
+    if (error.includes('SMTP') || error.includes('smtp')) {
       return EmailErrorType.SMTP_ERROR;
     }
-    if (error.includes("rate limit") || error.includes("throttle")) {
+    if (error.includes('rate limit') || error.includes('throttle')) {
       return EmailErrorType.RATE_LIMIT_EXCEEDED;
     }
-    if (error.includes("invalid") || error.includes("email")) {
+    if (error.includes('invalid') || error.includes('email')) {
       return EmailErrorType.INVALID_EMAIL;
     }
-    if (error.includes("content") || error.includes("not found")) {
+    if (error.includes('content') || error.includes('not found')) {
       return EmailErrorType.CONTENT_NOT_FOUND;
     }
-    if (error.includes("queue")) {
+    if (error.includes('queue')) {
       return EmailErrorType.QUEUE_ERROR;
     }
 
@@ -158,16 +158,16 @@ export class StatusManagerService {
     if (!error) return false;
 
     const retryableErrors = [
-      "SMTP_ERROR",
-      "RATE_LIMIT_EXCEEDED",
-      "QUEUE_ERROR",
+      'SMTP_ERROR',
+      'RATE_LIMIT_EXCEEDED',
+      'QUEUE_ERROR',
     ];
 
     return retryableErrors.some(
-      (retryableError) =>
+      retryableError =>
         error.includes(retryableError) ||
-        error.includes("timeout") ||
-        error.includes("connection")
+        error.includes('timeout') ||
+        error.includes('connection')
     );
   }
 
@@ -178,7 +178,7 @@ export class StatusManagerService {
     try {
       return await this.checkEmailStatus(contentId, emailId);
     } catch (error) {
-      console.error("Error getting email status:", error);
+      console.error('Error getting email status:', error);
       return null;
     }
   }

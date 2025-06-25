@@ -3,12 +3,11 @@ import {
   ConsumerSubscribeTopics,
   EachBatchPayload,
   EachMessagePayload,
-} from "kafkajs";
-import { KafkaClient } from "../kafkaClient";
-import { AuthorService } from "../../db/services/author.service";
-import { AuthorInput } from "../../db/services/author.service";
-import { QueueService } from "../../queue/services/queue.service";
-import { EmailAutomationService } from "../../services/email-automation";
+} from 'kafkajs';
+import { KafkaClient } from '../kafkaClient';
+import { AuthorService, AuthorInput } from '../../db/services/author.service';
+import { QueueService } from '../../queue/services/queue.service';
+import { EmailAutomationService } from '../../services/email-automation';
 
 export default class ChunkConsumer {
   private kafkaConsumer: Consumer;
@@ -34,7 +33,7 @@ export default class ChunkConsumer {
 
       await this.queueService.prepareAndPushToQueue(parsedObj.content);
     } catch (error) {
-      console.error("Error in DB operation:", error);
+      console.error('Error in DB operation:', error);
       throw error;
     }
   }
@@ -45,11 +44,11 @@ export default class ChunkConsumer {
     try {
       await this.kafkaConsumer.connect();
       await this.kafkaConsumer.subscribe({
-        topics: ["email-chunks"],
+        topics: ['email-chunks'],
         fromBeginning: true,
       });
 
-      return new Promise<boolean>((resolve) => {
+      return new Promise<boolean>(resolve => {
         this.kafkaConsumer.run({
           eachMessage: async (messagePayload: EachMessagePayload) => {
             const { message } = messagePayload;
@@ -57,10 +56,10 @@ export default class ChunkConsumer {
 
             try {
               const parsedObj = JSON.parse(message.value as unknown as string);
-              console.log("Received message for:", parsedObj.author);
+              console.log('Received message for:', parsedObj.author);
 
               if (this.currentProcessingPromise) {
-                console.log("Waiting for previous message to complete...");
+                console.log('Waiting for previous message to complete...');
                 await this.currentProcessingPromise;
               }
 
@@ -69,41 +68,39 @@ export default class ChunkConsumer {
               await this.currentProcessingPromise;
 
               console.log(
-                "Message processing completed for:",
+                'Message processing completed for:',
                 parsedObj.author
               );
 
               if (this.messageCount === kafkaProducerDataLength) {
-                console.log("All messages processed");
-
+                console.log('All messages processed');
 
                 try {
                   const emailAutomation = EmailAutomationService.getInstance();
                   await emailAutomation.start();
-                  console.log("Email automation polling started successfully");
+                  console.log('Email automation polling started successfully');
                 } catch (error) {
-                  console.error("Failed to start email automation:", error);
+                  console.error('Failed to start email automation:', error);
                 }
-                
 
                 resolve(true);
               }
             } catch (error) {
-              console.error("Error in message processing:", error);
+              console.error('Error in message processing:', error);
               this.currentProcessingPromise = null;
             }
           },
         });
       });
     } catch (error) {
-      console.error("Error in consumer:", error);
+      console.error('Error in consumer:', error);
       throw error;
     }
   }
 
   public async startBatchConsumer(): Promise<void> {
     const topic: ConsumerSubscribeTopics = {
-      topics: ["email-chunks"],
+      topics: ['email-chunks'],
       fromBeginning: false,
     };
 
@@ -114,14 +111,14 @@ export default class ChunkConsumer {
         eachBatch: async (eachBatchPayload: EachBatchPayload) => {
           const { batch } = eachBatchPayload;
 
-          for (const message of batch.messages) {
-            message;
-            // const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
+          for (const _message of batch.messages) {
+            // Process message here if needed
+            // const prefix = `${batch.topic}[${batch.partition} | ${_message.offset}] / ${_message.timestamp}`;
           }
         },
       });
     } catch (error) {
-      console.log("Error in the consumer Subscriber model ", error);
+      console.log('Error in the consumer Subscriber model ', error);
     }
   }
 
@@ -133,7 +130,7 @@ export default class ChunkConsumer {
       }
       await this.kafkaConsumer.disconnect();
     } catch (error) {
-      console.error("Error shutting down consumer:", error);
+      console.error('Error shutting down consumer:', error);
       throw error;
     }
   }
@@ -142,7 +139,7 @@ export default class ChunkConsumer {
     try {
       const kafka = KafkaClient.initKafka();
       const consumer = kafka.consumer({
-        groupId: "chunk-consumer-group",
+        groupId: 'chunk-consumer-group',
         retry: {
           initialRetryTime: 100,
           retries: 8,
@@ -155,8 +152,8 @@ export default class ChunkConsumer {
 
       return consumer;
     } catch (error) {
-      console.error("Error creating Kafka consumer:", error);
-      throw new Error("Failed to create Kafka consumer");
+      console.error('Error creating Kafka consumer:', error);
+      throw new Error('Failed to create Kafka consumer');
     }
   }
 

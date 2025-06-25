@@ -1,8 +1,6 @@
-import { RedisQueueOperations } from "../redis/queue.operations";
-import { PrismaService } from "../../lib/prisma";
-import { ContentOperations } from "../../db/operations/content.operations";
-
-const prisma = PrismaService.getInstance().getClient();
+import { RedisQueueOperations } from '../redis/queue.operations';
+import { ContentOperations } from '../../db/operations/content.operations';
+import { ContentEmailOperations } from '../../db/operations/contentEmail.operations';
 
 export class QueueService {
   private static instance: QueueService;
@@ -21,29 +19,32 @@ export class QueueService {
 
   public async prepareAndPushToQueue(contentString: string): Promise<void> {
     try {
-      const content = await ContentOperations.findContentByString(
-        contentString
-      );
+      //_Here we will check if the content is already present in the database
+      const content =
+        await ContentOperations.findContentByString(contentString);
 
       if (!content) {
+        console.log(`Content not found in database: ${contentString}`);
         return;
       }
 
-      const contentEmails = await prisma.contentEmail.findMany({
-        where: {
-          contentId: content.id,
-        },
-        include: {
-          email: true,
-        },
-      });
+      const unsentContentEmails =
+        await ContentEmailOperations.getUnsentEmailsForContent(content.id);
 
-      if (!contentEmails || contentEmails.length === 0) {
+      if (!unsentContentEmails || unsentContentEmails.length === 0) {
+        console.log(`No unsent emails found for content ${content.id}`);
         return;
       }
 
-      for (const contentEmail of contentEmails) {
+      console.log(
+        `Found ${unsentContentEmails.length} unsent emails for content ${content.id}`
+      );
+
+      for (const contentEmail of unsentContentEmails) {
         try {
+          console.log(
+            `Pushing content ${content.id} with email ${contentEmail.email.email} to queue`
+          );
           await this.queueOperations.pushToQueue(
             content.id,
             contentEmail.emailId
@@ -57,7 +58,7 @@ export class QueueService {
         }
       }
     } catch (error) {
-      console.error("Error in prepareAndPushToQueue:", error);
+      console.error('Error in prepareAndPushToQueue:', error);
     }
   }
 }

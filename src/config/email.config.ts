@@ -23,30 +23,69 @@ export interface EmailConfig {
     emptyQueueBackoff: number;
     maxConcurrentEmails: number;
   };
+  templates: {
+    coldEmail: {
+      subject: string;
+      templateName: string;
+    };
+  };
+  attachments: {
+    resume: {
+      filename: string;
+      path: string;
+    };
+  };
+}
+
+// Validate required environment variables
+if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  console.warn(
+    '⚠️  WARNING: Missing Gmail credentials in environment variables'
+  );
+  console.warn('   - GMAIL_USER: Your Gmail address');
+  console.warn('   - GMAIL_APP_PASSWORD: Your Gmail app password');
+  console.warn(
+    '   Email functionality will not work without these credentials'
+  );
+  console.warn('   Please set these in your .env file for full functionality');
+  // Don't exit, just warn
 }
 
 export const emailConfig: EmailConfig = {
   smtp: {
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
+    host: process.env.SMTP_HOST || '',
+    port: parseInt(process.env.SMTP_PORT || ''),
+    secure: process.env.SMTP_SECURE === 'true',
     auth: {
-      user: process.env.SMTP_USER || "",
-      pass: process.env.SMTP_PASS || "",
+      user: process.env.GMAIL_USER || '',
+      pass: process.env.GMAIL_APP_PASSWORD || '',
     },
   },
   rateLimits: {
-    maxEmailsPerMinute: parseInt(process.env.MAX_EMAILS_PER_MINUTE || "28"),
-    maxEmailsPerHour: parseInt(process.env.MAX_EMAILS_PER_HOUR || "1000"),
-    maxRetries: parseInt(process.env.MAX_RETRIES || "3"),
+    maxEmailsPerMinute: 28,
+    maxEmailsPerHour: 1000,
+    maxRetries: 3,
   },
   retryPolicy: {
-    initialDelay: 1000, // 1 second
-    maxDelay: 30000, // 30 seconds
+    initialDelay: 1000,
+    maxDelay: 30000,
     backoffMultiplier: 2,
   },
   queue: {
-    pollingInterval: parseInt(process.env.POLLING_INTERVAL || "5000"),     emptyQueueBackoff: parseInt(process.env.EMPTY_QUEUE_BACKOFF || "10000"), 
-    maxConcurrentEmails: parseInt(process.env.MAX_CONCURRENT_EMAILS || "5"),
+    pollingInterval: 5000,
+    emptyQueueBackoff: 10000,
+    maxConcurrentEmails: 5,
+  },
+  templates: {
+    coldEmail: {
+      subject: 'Full Stack Developer Engineer | {authorName}',
+      templateName: 'cold-email',
+    },
+  },
+  attachments: {
+    resume: {
+      filename: 'Arnab_Paul_Full_Stack_Resume.pdf',
+      path: './assets/Arnab_Paul_Full_Stack_Resume.pdf',
+    },
   },
 };

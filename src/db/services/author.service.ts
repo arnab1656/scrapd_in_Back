@@ -1,12 +1,12 @@
 import {
   AuthorOperations,
   AuthorWithRelations,
-} from "../operations/author.operations";
-import { EmailOperations } from "../operations/email.operations";
-import { PhoneOperations } from "../operations/phone.operations";
-import { ContentOperations } from "../operations/content.operations";
-import { PrismaService } from "../../lib/prisma";
-import { ContentEmailOperations } from "../operations/contentEmail.operations";
+} from '../operations/author.operations';
+import { EmailOperations } from '../operations/email.operations';
+import { PhoneOperations } from '../operations/phone.operations';
+import { ContentOperations } from '../operations/content.operations';
+import { PrismaService } from '../../lib/prisma';
+import { ContentEmailOperations } from '../operations/contentEmail.operations';
 
 export interface AuthorInput {
   name: string;
@@ -24,27 +24,50 @@ export class AuthorService {
   ): Promise<AuthorWithRelations> {
     try {
       const author = await prisma.$transaction(
-        async (tx) => {
-          const existingAuthor = await AuthorOperations.findAuthorByName(
+        async tx => {
+          const existingAuthorByName = await AuthorOperations.findAuthorByName(
             authorData.name
           );
 
-          if (existingAuthor) {
-            await tx.content.create({
-              data: {
-                content: authorData.content || "",
-                authorId: existingAuthor.id,
-              },
-            });
-            return existingAuthor;
-          }
+          if (existingAuthorByName) {
+            // Check if LinkedIn URL matches with existing author
+            if (
+              authorData.linkedInURL &&
+              existingAuthorByName.linkedInURL === authorData.linkedInURL
+            ) {
+              // Check if content already exists for this author
+              const existingContentForAuthor =
+                await ContentOperations.findContentByString(authorData.content);
 
-          const newAuthor = await AuthorOperations.createAuthor(
-            authorData.name,
-            authorData.linkedInURL,
-            authorData.content
-          );
-          return newAuthor;
+              if (existingContentForAuthor) {
+                return existingAuthorByName;
+              } else {
+                await tx.content.create({
+                  data: {
+                    content: authorData.content || '',
+                    authorId: existingAuthorByName.id,
+                  },
+                });
+                return existingAuthorByName;
+              }
+            } else {
+              const newAuthor = await AuthorOperations.createAuthor(
+                authorData.name,
+                authorData.linkedInURL,
+                authorData.content
+              );
+              return newAuthor;
+            }
+          } else {
+            //_here we will create a new author with the details passed as the authorData
+            console.log(`Creating new author with name "${authorData.name}"`);
+            const newAuthor = await AuthorOperations.createAuthor(
+              authorData.name,
+              authorData.linkedInURL,
+              authorData.content
+            );
+            return newAuthor;
+          }
         },
         {
           timeout: 30000,
@@ -56,9 +79,8 @@ export class AuthorService {
           try {
             await prisma.$transaction(
               async () => {
-                const emailRecord = await EmailOperations.findOrCreateEmail(
-                  email
-                );
+                const emailRecord =
+                  await EmailOperations.findOrCreateEmail(email);
                 await EmailOperations.connectEmailToAuthor(
                   author.id,
                   emailRecord.id
@@ -79,9 +101,8 @@ export class AuthorService {
           try {
             await prisma.$transaction(
               async () => {
-                const phoneRecord = await PhoneOperations.findOrCreatePhone(
-                  phone
-                );
+                const phoneRecord =
+                  await PhoneOperations.findOrCreatePhone(phone);
                 await PhoneOperations.connectPhoneToAuthor(
                   author.id,
                   phoneRecord.id
@@ -98,43 +119,50 @@ export class AuthorService {
       }
 
       if (authorData.content && authorData.emails.length > 0) {
-        const contentRecord = await ContentOperations.findContentByString(
+        const existingContent = await ContentOperations.findContentByString(
           authorData.content
         );
 
-        if (!contentRecord) {
-          console.error(
-            "Content not found for string in DB:",
-            authorData.content
-          );
-        }
-
-        for (const email of authorData.emails) {
-          try {
-            await prisma.$transaction(
-              async () => {
-                const emailRecord = await EmailOperations.findOrCreateEmail(
-                  email
-                );
-
-                console.log(
-                  "Got Email record and name connecting content to email ---> ",
-                  emailRecord.id,
-                  emailRecord.email
-                );
-
-                await ContentEmailOperations.connectEmailToContent(
-                  contentRecord?.id as number,
-                  emailRecord.id
-                );
-              },
-              {
-                timeout: 10000,
-              }
+        if (existingContent) {
+          const contentEmailConnections =
+            await ContentEmailOperations.getContentEmailConnections(
+              existingContent.id
             );
-          } catch (error) {
-            console.error("Error in connecting email to content:", error);
+
+          if (contentEmailConnections.length > 0) {
+            // Re-entry: Content already connected to emails, skip connection
+          } else {
+            for (const email of authorData.emails) {
+              try {
+                await prisma.$transaction(
+                  async () => {
+                    const emailRecord =
+                      await EmailOperations.findOrCreateEmail(email);
+
+                    console.log(
+                      'Got Email record and name connecting content to email ---> ',
+                      emailRecord.id,
+                      emailRecord.email
+                    );
+
+                    await ContentEmailOperations.connectEmailToContent(
+                      existingContent.id,
+                      emailRecord.id
+                    );
+                  },
+                  {
+                    timeout: 10000,
+                  }
+                );
+              } catch (error) {
+                console.error('Error in connecting email to content:', error);
+              }
+            }
           }
+        } else {
+          console.log(
+            `Content not found in database, this is unexpected. Creating content-email connections.`
+          );
         }
       }
 
@@ -157,7 +185,7 @@ export class AuthorService {
 
       return completeAuthor;
     } catch (error) {
-      console.error("Error in fetching complete author details:", error);
+      console.error('Error in fetching complete author details:', error);
       throw error;
     }
   }

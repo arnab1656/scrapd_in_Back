@@ -1,5 +1,5 @@
-import { BackoffStatus } from "../types/email.types";
-import { emailConfig } from "../config/email.config";
+import { BackoffStatus } from '../types/email.types';
+import { emailConfig } from '../config/email.config';
 
 export class BackoffStrategy {
   private static instance: BackoffStrategy;
@@ -17,7 +17,7 @@ export class BackoffStrategy {
 
   public async wait(): Promise<void> {
     const delay = this.calculateDelay();
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise(resolve => setTimeout(resolve, delay));
     this.incrementAttempt();
   }
 

@@ -1,4 +1,4 @@
-import { ChunkInfo, ExtractedDataType } from "./common.types";
+import { ChunkInfo, ExtractedDataType } from './common.types';
 
 export interface BatchInfo<T> {
   batch: ChunkInfo<T>[];

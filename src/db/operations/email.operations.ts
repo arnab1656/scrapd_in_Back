@@ -1,5 +1,5 @@
-import { Email } from "@prisma/client";
-import { PrismaService } from "../../lib/prisma";
+import { Email } from '@prisma/client';
+import { PrismaService } from '../../lib/prisma';
 
 const prisma = PrismaService.getInstance().getClient();
 
@@ -12,7 +12,7 @@ export class EmailOperations {
         create: { email },
       });
     } catch (error) {
-      console.error("Error finding or creating email:", error);
+      console.error('Error finding or creating email:', error);
       throw error;
     }
   }
@@ -30,7 +30,7 @@ export class EmailOperations {
       });
 
       if (existingRelation) {
-        console.log("Email is already connected to the author");
+        console.log('Email is already connected to the author');
         return;
       }
 
@@ -40,9 +40,9 @@ export class EmailOperations {
           emailId,
         },
       });
-      console.log("Successfully connected email to author");
+      console.log('Successfully connected email to author');
     } catch (error) {
-      console.error("Error connecting email to author:", error);
+      console.error('Error connecting email to author:', error);
     }
   }
 }

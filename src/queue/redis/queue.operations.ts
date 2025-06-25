@@ -1,5 +1,5 @@
-import { Redis } from "ioredis";
-import { redisConfig } from "../../config/redis.config";
+import { Redis } from 'ioredis';
+import { redisConfig } from '../../config/redis.config';
 
 interface QueueItem {
   contentId: number;
@@ -10,7 +10,7 @@ interface QueueItem {
 export class RedisQueueOperations {
   private static instance: RedisQueueOperations;
   private redisClient: Redis;
-  private readonly QUEUE_NAME = "content_email_queue";
+  private readonly QUEUE_NAME = 'content_email_queue';
   private readonly MAX_QUEUE_SIZE = 10000;
 
   private constructor() {
@@ -34,14 +34,14 @@ export class RedisQueueOperations {
 
       const currentLength = await this.getQueueLength();
       if (currentLength >= this.MAX_QUEUE_SIZE) {
-        throw new Error("Queue is full");
+        throw new Error('Queue is full');
       }
 
       await this.redisClient.rpush(this.QUEUE_NAME, JSON.stringify(queueItem));
 
       console.log(`Content ID ${contentId} pushed to queue`);
     } catch (error) {
-      console.error("Error pushing to queue:", error);
+      console.error('Error pushing to queue:', error);
       throw error;
     }
   }
@@ -57,7 +57,7 @@ export class RedisQueueOperations {
       const queueItem: QueueItem = JSON.parse(item);
       return queueItem;
     } catch (error) {
-      console.error("Error popping from queue:", error);
+      console.error('Error popping from queue:', error);
       throw error;
     }
   }
@@ -66,7 +66,7 @@ export class RedisQueueOperations {
     try {
       return await this.redisClient.llen(this.QUEUE_NAME);
     } catch (error) {
-      console.error("Error getting queue length:", error);
+      console.error('Error getting queue length:', error);
       throw error;
     }
   }

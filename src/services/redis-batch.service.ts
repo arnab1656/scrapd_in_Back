@@ -1,11 +1,11 @@
-import Redis from "ioredis";
-import { v4 as uuid } from "uuid";
+import Redis from 'ioredis';
+import { v4 as uuid } from 'uuid';
 import {
   redisConfig,
   BATCH_KEY_PREFIX,
   BATCH_TTL,
-} from "../config/redis.config";
-import { RedisBatchMetadata, RedisChunkData } from "../types/redis.types";
+} from '../config/redis.config';
+import { RedisBatchMetadata, RedisChunkData } from '../types/redis.types';
 
 export class RedisBatchManager {
   private redis: Redis;
@@ -16,13 +16,13 @@ export class RedisBatchManager {
   }
 
   private setupRedisErrorHandling(): void {
-    this.redis.on("error", (error: Error) => {
-      console.error("Redis Error:", error);
+    this.redis.on('error', (error: Error) => {
+      console.error('Redis Error:', error);
       // Implement your error reporting here
     });
 
-    this.redis.on("connect", () => {
-      console.log("Successfully connected to Redis");
+    this.redis.on('connect', () => {
+      console.log('Successfully connected to Redis');
     });
   }
 
@@ -41,7 +41,7 @@ export class RedisBatchManager {
     const batchMetadata: RedisBatchMetadata = {
       totalChunks,
       startTime: Date.now(),
-      status: "initializing",
+      status: 'initializing',
       receivedChunks: 0,
     };
 
@@ -54,8 +54,8 @@ export class RedisBatchManager {
 
       return batchId;
     } catch (error) {
-      console.error("Error initializing batch:", error);
-      throw new Error("Failed to initialize batch");
+      console.error('Error initializing batch:', error);
+      throw new Error('Failed to initialize batch');
     }
   }
 
@@ -77,8 +77,8 @@ export class RedisBatchManager {
       await this.redis
         .multi()
         .hset(chunkKey, chunkIndex.toString(), JSON.stringify(chunk))
-        .hincrby(batchKey, "receivedChunks", 1)
-        .hset(batchKey, "status", "processing")
+        .hincrby(batchKey, 'receivedChunks', 1)
+        .hset(batchKey, 'status', 'processing')
         .expire(chunkKey, BATCH_TTL)
         .exec();
     } catch (error) {
@@ -94,17 +94,17 @@ export class RedisBatchManager {
     try {
       const [totalChunks, receivedChunks] = await this.redis.hmget(
         batchKey,
-        "totalChunks",
-        "receivedChunks"
+        'totalChunks',
+        'receivedChunks'
       );
 
       if (parseInt(receivedChunks!) === parseInt(totalChunks!)) {
-        await this.redis.hset(batchKey, "status", "completed");
+        await this.redis.hset(batchKey, 'status', 'completed');
         return true;
       }
       return false;
     } catch (error) {
-      console.error("Error marking batch complete:", error);
+      console.error('Error marking batch complete:', error);
       throw new Error(`Failed to mark batch ${batchId} as complete`);
     }
   }
@@ -116,7 +116,7 @@ export class RedisBatchManager {
     try {
       await this.redis.multi().del(batchKey).del(chunkKey).exec();
     } catch (error) {
-      console.error("Error cleaning up batch:", error);
+      console.error('Error cleaning up batch:', error);
       throw new Error(`Failed to cleanup batch ${batchId}`);
     }
   }

@@ -1,5 +1,5 @@
-import { Content } from "@prisma/client";
-import { PrismaService } from "../../lib/prisma";
+import { Content } from '@prisma/client';
+import { PrismaService } from '../../lib/prisma';
 
 const prisma = PrismaService.getInstance().getClient();
 
@@ -14,7 +14,7 @@ export class ContentOperations {
         },
       });
     } catch (error) {
-      console.error("Error finding content by string:", error);
+      console.error('Error finding content by string:', error);
       throw error;
     }
   }
@@ -33,7 +33,7 @@ export class ContentOperations {
         },
       });
     } catch (error) {
-      console.error("Error creating content:", error);
+      console.error('Error creating content:', error);
       throw error;
     }
   }

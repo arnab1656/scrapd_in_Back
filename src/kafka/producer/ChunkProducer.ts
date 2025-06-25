@@ -1,6 +1,6 @@
-import { Message, Producer, ProducerBatch, Partitioners } from "kafkajs";
-import { KafkaClient } from "../kafkaClient";
-import { ExtractedDataType } from "../../types/common.types";
+import { Message, Producer, ProducerBatch, Partitioners } from 'kafkajs';
+import { KafkaClient } from '../kafkaClient';
+import { ExtractedDataType } from '../../types/common.types';
 
 export class ChunkProducer {
   private producer: Producer;
@@ -24,9 +24,9 @@ export class ChunkProducer {
   public async start(): Promise<void> {
     try {
       await this.producer.connect();
-      console.log("Producer connected successfully");
+      console.log('Producer connected successfully');
     } catch (error) {
-      console.error("Error connecting the producer:", error);
+      console.error('Error connecting the producer:', error);
       throw error;
     }
   }
@@ -41,7 +41,7 @@ export class ChunkProducer {
       });
 
       const topicMessages = {
-        topic: "email-chunks",
+        topic: 'email-chunks',
         messages: kafkaMessages,
       };
 
@@ -50,9 +50,9 @@ export class ChunkProducer {
       };
 
       const result = await this.producer.sendBatch(batch);
-      console.log("Batch sent successfully. Result:", result);
+      console.log('Batch sent successfully. Result:', result);
     } catch (error) {
-      console.error("Error sending the batch:", error);
+      console.error('Error sending the batch:', error);
       throw error;
     }
   }
@@ -61,7 +61,7 @@ export class ChunkProducer {
     try {
       await this.producer.disconnect();
     } catch (error) {
-      console.error("Error disconnecting the producer:", error);
+      console.error('Error disconnecting the producer:', error);
       throw error;
     }
   }

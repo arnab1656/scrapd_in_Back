@@ -1,7 +1,7 @@
-import ChunkConsumer from "../kafka/consumer/ChunkConsumer";
-import { ChunkProducer } from "../kafka/producer/ChunkProducer";
-import { ExtractedDataType } from "../types/common.types";
-import { RedisBatchManager } from "../services/redis-batch.service";
+import ChunkConsumer from '../kafka/consumer/ChunkConsumer';
+import { ChunkProducer } from '../kafka/producer/ChunkProducer';
+import { ExtractedDataType } from '../types/common.types';
+import { RedisBatchManager } from '../services/redis-batch.service';
 
 export class KafkaOrchestrator {
   private chunkConsumer: ChunkConsumer;
@@ -36,7 +36,7 @@ export class KafkaOrchestrator {
         await this.chunkConsumer.shutdown();
       }
     } catch (error) {
-      console.error("Error in consumer startup:", error);
+      console.error('Error in consumer startup:', error);
       throw error;
     }
   }
@@ -47,7 +47,7 @@ export class KafkaOrchestrator {
       await this.producer.sendBatch(kafkaProducerData);
       await this.producer.shutdown();
     } catch (error) {
-      console.error("Error in producer handling:", error);
+      console.error('Error in producer handling:', error);
       throw error;
     }
   }
@@ -59,9 +59,9 @@ export class KafkaOrchestrator {
         this.handleProducer(this.kafkaProducerData),
       ]);
 
-      console.log("Orchestrator completed successfully");
+      console.log('Orchestrator completed successfully');
     } catch (error) {
-      console.error("Error in orchestrator:", error);
+      console.error('Error in orchestrator:', error);
       if (this.chunkConsumer && this.producer) {
         await this.chunkConsumer.shutdown();
         await this.producer.shutdown();

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 export class PrismaService {
   private static instance: PrismaService;
@@ -7,7 +7,7 @@ export class PrismaService {
 
   private constructor() {
     this.prisma = new PrismaClient({
-      log: ["query", "error", "warn"],
+      log: ['query', 'error', 'warn'],
     });
   }
 
@@ -28,16 +28,23 @@ export class PrismaService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempting to connect to database (attempt ${attempt}/${maxRetries})...`);
+        console.log(
+          `Attempting to connect to database (attempt ${attempt}/${maxRetries})...`
+        );
         await this.prisma.$connect();
         this.isConnected = true;
-        console.log("✅ Successfully connected to database");
+        console.log('✅ Successfully connected to database');
         return;
       } catch (error) {
-        console.error(`❌ Database connection attempt ${attempt} failed:`, error);
-        
+        console.error(
+          `❌ Database connection attempt ${attempt} failed:`,
+          error
+        );
+
         if (attempt === maxRetries) {
-          console.error("❌ Max retry attempts reached. Failed to connect to database.");
+          console.error(
+            '❌ Max retry attempts reached. Failed to connect to database.'
+          );
           throw error;
         }
 
@@ -51,9 +58,9 @@ export class PrismaService {
     try {
       await this.prisma.$disconnect();
       this.isConnected = false;
-      console.log("✅ Successfully disconnected from database");
+      console.log('✅ Successfully disconnected from database');
     } catch (error) {
-      console.error("❌ Failed to disconnect from database:", error);
+      console.error('❌ Failed to disconnect from database:', error);
       throw error;
     }
   }
@@ -63,7 +70,7 @@ export class PrismaService {
       await this.prisma.$queryRaw`SELECT 1`;
       return true;
     } catch (error) {
-      console.error("❌ Database health check failed:", error);
+      console.error('❌ Database health check failed:', error);
       this.isConnected = false;
       return false;
     }
@@ -80,11 +87,11 @@ export class PrismaService {
     }
 
     try {
-      console.log("🔄 Attempting to reconnect to database...");
+      console.log('🔄 Attempting to reconnect to database...');
       await this.disconnect();
       await this.connect();
     } catch (error) {
-      console.error("❌ Failed to reconnect to database:", error);
+      console.error('❌ Failed to reconnect to database:', error);
       throw error;
     }
   }

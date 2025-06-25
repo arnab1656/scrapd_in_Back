@@ -1,5 +1,5 @@
-import { RateLimitStatus } from "../types/email.types";
-import { emailConfig } from "../config/email.config";
+import { RateLimitStatus } from '../types/email.types';
+import { emailConfig } from '../config/email.config';
 
 export class RateLimiter {
   private static instance: RateLimiter;
@@ -30,7 +30,7 @@ export class RateLimiter {
   public async waitForRateLimit(): Promise<void> {
     while (!this.canSendEmail()) {
       const delay = this.calculateDelay();
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
@@ -77,9 +77,8 @@ export class RateLimiter {
       60000 - (now.getTime() - this.lastMinuteReset.getTime());
     const hourDelay = 3600000 - (now.getTime() - this.lastHourReset.getTime());
 
-    
     const calculatedDelay = Math.min(minuteDelay, hourDelay);
-    return Math.min(Math.max(calculatedDelay, 1000), 5000); 
+    return Math.min(Math.max(calculatedDelay, 1000), 5000);
   }
 
   private calculateNextAvailableTime(): Date {
